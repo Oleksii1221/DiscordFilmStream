@@ -1,21 +1,16 @@
 {
-    "name": "@dank074/discord-video-stream",
-    "version": "7.0.0",
-    "description": "Experiment for making video streaming work for discord selfbots",
-    "exports": "./dist/index.js",
-    "types": "dist/index.d.ts",
+    "name": "discord-film-stream",
+    "version": "0.1.0",
+    "description": "Discord slash-command controller for a looping video stream",
+    "private": true,
     "type": "module",
-    "files": [
-        "dist",
-        "src"
-    ],
-    "publishConfig": {
-        "access": "public"
-    },
     "dependencies": {
+        "@lng2004/discord.js-selfbot-v13": "^3.7.2",
         "@lng2004/node-datachannel": "0.33.2-20260921",
         "@snazzah/davey": "^0.1.12",
         "debug-level": "^4.1.1",
+        "discord.js": "^14.28.1",
+        "dotenv": "^18.0.10",
         "node-av": "6.2.0",
         "p-debounce": "^6.0.0",
         "sharp": "^0.35.5",
@@ -23,52 +18,25 @@
     },
     "devDependencies": {
         "@biomejs/biome": "2.6.4",
-        "@lng2004/discord.js-selfbot-v13": "^3.7.2",
         "@types/node": "^26.6.6",
         "pkg-pr-new": "^0.0.93",
         "typescript": "^7.0.2"
     },
-    "peerDependencies": {
-        "@lng2004/discord.js-selfbot-v13": "^3.7.2"
-    },
     "engines": {
-        "node": ">=22.4.0"
+        "node": ">=22.18.0"
     },
     "scripts": {
         "build": "tsc",
+        "start": "node dist/app/index.js",
+        "test": "pnpm build && node --test dist/app/*.test.js",
         "lint": "biome lint --error-on-warnings .",
         "lint:fix": "biome lint --write .",
         "check": "biome check .",
         "check:fix": "biome check --write ."
     },
-    "keywords": [
-        "discord",
-        "video",
-        "voice",
-        "stream",
-        "go-live"
-    ],
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/dank074/Discord-video-stream.git"
+        "url": "git+https://github.com/Oleksii1221/DiscordFilmStream.git"
     },
-    "contributors": [
-        "Long Nguyen <nguyen.long.908132@gmail.com>",
-        "s074 <torresefrain10@gmail.com>",
-        "mrjvs <jellevs@gmail.com>",
-        "Elysia <71698422+aiko-chan-ai@users.noreply.github.com>",
-        "Fede14 <fede.ferri2001@gmail.com>",
-        "Malthe Morsing Larsen <57196060+malthemorsing@users.noreply.github.com>"
-    ],
-    "license": "ISC",
-    "bugs": {
-        "url": "https://github.com/Discord-RE/Discord-video-stream/issues"
-    },
-    "homepage": "https://github.com/Discord-RE/Discord-video-stream#readme",
-    "pnpm": {
-        "onlyBuiltDependencies": [
-            "@lng2004/node-datachannel",
-            "node-datachannel"
-        ]
-    }
+    "license": "ISC"
 }

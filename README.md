@@ -1,304 +1,94 @@
-# Discord self-bot video
+# DiscordFilmStream (DFS)
 
-[![pkg.pr.new](https://pkg.pr.new/badge/Discord-RE/Discord-video-stream)](https://pkg.pr.new/~/Discord-RE/Discord-video-stream)
+DFS запускає зациклену відеотрансляцію в Discord за slash-командою
+`/hello` і зупиняє її командою `/goodbye`.
 
-Fork: [Discord-video-experiment](https://github.com/mrjvs/Discord-video-experiment)
+## Як це працює
+
+Discord не дозволяє звичайним bot-акаунтам надсилати Go Live відео. Тому
+проєкт використовує дві окремі Discord-сесії:
+
+1. Офіційний бот DFS реєструє та обробляє `/hello` і `/goodbye`.
+2. Окремий користувацький акаунт підключається до voice-каналу та передає
+   відео через експериментальну selfbot-бібліотеку.
+
+`/hello` використовує voice-канал користувача, який викликав команду. Відео
+завантажується з YouTube один раз у локальний каталог `.cache`, після чого
+FFmpeg створює один безперервний зациклений H.264/Opus потік. `/goodbye`
+зупиняє FFmpeg, Go Live та виходить із каналу.
 
 > [!CAUTION]
-> Using any kind of automation programs on your account can result in your account getting permanently banned by Discord. Use at your own risk
+> Selfbot-автоматизація порушує правила Discord і може призвести до блокування
+> користувацького акаунта. Не використовуйте основний акаунт. Проєкт не
+> обходить CAPTCHA, MFA або інші засоби захисту Discord.
 
-## Features
+## Вимоги
 
-- Playing video & audio in a voice channel (`Go Live`, or webcam video)
+- Node.js 22.18 або новіший;
+- pnpm;
+- Windows 10/11 x64 для автоматичного завантаження перевіреного `yt-dlp`;
+- для інших платформ — встановлений `yt-dlp` у `PATH` або `YT_DLP_PATH`.
 
-## Implementation
+FFmpeg постачається залежністю `node-av`. Windows-версія `yt-dlp` закріплена
+на конкретному релізі та перевіряється за SHA-256 перед запуском.
 
-What I implemented and what I did not.
+## Налаштування
 
-### Video codecs
+1. Встановіть залежності:
 
-- [ ] VP8 (once supported, removed for maintainability)
-- [ ] VP9
-- [X] H.264
-- [X] H.265
-- [ ] AV1
+   ```powershell
+   pnpm install
+   ```
 
-### Packet types
+2. Скопіюйте `.env.example` у `.env`.
 
-- [X] RTP (sending of realtime data)
-- [X] RTX (retransmission)
+3. Заповніть секрети тільки в локальному `.env`:
 
-### Connection types
+   ```dotenv
+   DISCORD_BOT_TOKEN=офіційний_bot_token
+   DISCORD_STREAM_USER_TOKEN=токен_окремого_користувача
+   ```
 
-- [X] Regular Voice Connection
-- [X] Go Live
+   `DISCORD_APPLICATION_ID` уже містить публічний ID застосунку DFS.
+   Публічний ключ застосунку не є bot token і не використовується для входу.
 
-### Encryption
+4. Додайте застосунок на сервер зі scope `bot` та
+   `applications.commands`. Окремий stream-користувач також повинен бути на
+   цьому сервері й мати доступ до потрібного voice-каналу.
 
-- [X] Transport Encryption
-- [X] [End-to-end Encryption](https://github.com/dank074/Discord-video-stream/issues/102)
+5. Зберіть і запустіть:
 
-### Extras
+   ```powershell
+   pnpm build
+   pnpm start
+   ```
 
-- [X] Figure out RTP header extensions (discord specific) (discord seems to use [one-byte RTP header extension](https://www.rfc-editor.org/rfc/rfc8285.html#section-4.2))
+Під час запуску бот глобально реєструє `/hello` і `/goodbye`. За замовчуванням
+команди доступні учасникам із правом **Manage Server**. Для точного списку
+користувачів задайте їхні ID через кому в `DFS_ALLOWED_USER_IDS`.
 
-Extensions supported by Discord (taken from the webrtc sdp exchange)
+## Перевірка
 
-```
-"a=extmap:1 urn:ietf:params:rtp-hdrext:ssrc-audio-level"
-"a=extmap:2 http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time"
-"a=extmap:3 http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01"
-"a=extmap:4 urn:ietf:params:rtp-hdrext:sdes:mid"
-"a=extmap:5 http://www.webrtc.org/experiments/rtp-hdrext/playout-delay"
-"a=extmap:6 http://www.webrtc.org/experiments/rtp-hdrext/video-content-type"
-"a=extmap:7 http://www.webrtc.org/experiments/rtp-hdrext/video-timing"
-"a=extmap:8 http://www.webrtc.org/experiments/rtp-hdrext/color-space"
-"a=extmap:10 urn:ietf:params:rtp-hdrext:sdes:rtp-stream-id"
-"a=extmap:11 urn:ietf:params:rtp-hdrext:sdes:repaired-rtp-stream-id"
-"a=extmap:13 urn:3gpp:video-orientation"
-"a=extmap:14 urn:ietf:params:rtp-hdrext:toffset"
-```
-
-## Requirements
-
-This library requires FFmpeg to be installed and available in your `PATH`. Any recent static build works, for example:
-
-- Windows & Linux: [BtbN's FFmpeg Builds](https://github.com/BtbN/FFmpeg-Builds)
-- macOS (Intel): [evermeet.cx](https://evermeet.cx/ffmpeg/)
-- macOS (Apple Silicon): [ffmpeg.martin-riedl.de](https://ffmpeg.martin-riedl.de/)
-
-## Usage
-
-Install the package, alongside its peer-dependency @lng2004/discord.js-selfbot-v13:
-
-```
-npm install @dank074/discord-video-stream@latest
-npm install @lng2004/discord.js-selfbot-v13@latest
+```powershell
+pnpm lint
+pnpm test
 ```
 
-> [!IMPORTANT]
-> This library makes use of native dependencies (`node-av` and `node-datachannel`). If you use package managers that don't run install scripts by default (`pnpm`, `bun`, etc.), you'll need to allow running install scripts for `node-av` and `node-datachannel` for proper operation.
+## Секрети
 
-Create a new Streamer, and pass it a selfbot Client
+- `.env`, кеш, завантажене відео й інструменти не потрапляють у Git;
+- ніколи не додавайте bot token або user token до коду, логів чи issues;
+- якщо секрет випадково опубліковано, негайно скиньте його в Discord Developer
+  Portal.
 
-```typescript
-import { Client } from "@lng2004/discord.js-selfbot-v13";
-import { Streamer } from '@dank074/discord-video-stream';
+## Гілки
 
-const streamer = new Streamer(new Client());
-await streamer.client.login('TOKEN HERE');
-```
+- `dev` — поточна розробка;
+- `master` — лише релізи після прямої команди власника;
+- релізні коміти в `master`: `V1.0.0`, `V1.0.1` тощо.
 
-Make client join a voice channel
+## Походження
 
-```typescript
-await streamer.joinVoice("GUILD ID HERE", "CHANNEL ID HERE");
-```
-
-Start sending media
-
-```typescript
-import { prepareStream, playStream, Utils, Encoders } from "@dank074/discord-video-stream"
-try {
-    // Hardware encoders are also available: Encoders.nvenc, Encoders.qsv,
-    // Encoders.videotoolbox, Encoders.amf, Encoders.v4l2m2m and
-    // Encoders.vaapi (see the encoder docs for their settings)
-    let encoder = Encoders.software({
-        x264: {
-            preset: "superfast"
-        },
-        x265: {
-            preset: "superfast"
-        }
-    });
-    const { output, promise } = await prepareStream("DIRECT VIDEO URL OR READABLE STREAM HERE", {
-        encoder,
-
-        // Specify either width or height for aspect ratio aware scaling
-        // Specify both for stretched output
-        height: 1080,
-
-        // Force frame rate, or leave blank to use source frame rate
-        frameRate: 30,
-        bitrateVideo: 5000,
-        bitrateVideoMax: 7500,
-        videoCodec: Utils.normalizeVideoCodec("H264" /* or H265 */),
-    });
-    promise.catch((err) => {
-        // Handle transcode pipeline errors here
-    });
-
-    await playStream(output, streamer, {
-        type: "go-live" // use "camera" for camera stream
-    });
-
-    console.log("Finished playing video");
-} catch (e) {
-    console.log(e);
-}
-```
-
-## Encoder options available
-
-```typescript
-/**
- * A function returning encoder settings for a specific avg and max bitrate
- * You can define your own, or use the pre-made functions in the library
- */
-encoder: EncoderSettingsGetter;
-/**
- * Disable transcoding of the video stream. If specified, all video related
- * options have no effects
- * 
- * Only use this if your video stream is Discord streaming friendly, otherwise
- * you'll get a glitchy output
- */
-noTranscoding?: boolean;
-/**
- * Video output width
- */
-width?: number;
-/**
- * Video output height
- */
-height?: number;
-/**
- * Video output frames per second
- */
-fps?: number;
-/**
- * Video average bitrate in kbps
- */
-bitrateVideo?: number;
-/**
- * Video max bitrate in kbps
- */
-bitrateVideoMax?: number;
-/**
- * Audio bitrate in kbps
- */
-bitrateAudio?: number;
-/**
- * Select the video stream to play, from the video streams present in the
- * input. Return null to disable video output
- */
-videoStream?: (streams: Stream[]) => Stream | null;
-/**
- * Select the audio stream to play, from the audio streams present in the
- * input. Return null to disable audio output
- */
-audioStream?: (streams: Stream[]) => Stream | null;
-/**
- * Output video codec. **Only** supports H264, H265, and VP8 currently
- */
-videoCodec?: SupportedVideoCodec;
-/**
- * Adds ffmpeg params to minimize latency and start outputting video as fast as possible.
- * Might create lag in video output in some rare cases
- */
-minimizeLatency?: boolean;
-/**
- * Custom headers for HTTP requests
- */
-customHeaders?: Record<string, string>;
-/**
-   * Custom input options to pass directly to ffmpeg
-   * These will be added to the command *before* other options
-   *
-   * NOTE: only applies to the ffmpeg CLI, and is ignored when transcoding
-   * in-process
- */
-customInputOptions?: string[];
-/**
- * Custom ffmpeg flags/options to pass directly to ffmpeg
- * These will be added to the command *after* other options
- *
- * NOTE: only applies to the ffmpeg CLI, and is ignored when transcoding
- * in-process
- */
-customFfmpegFlags?: string[];
-```
-
-## `playStream` options available
-
-```typescript
-/**
- * Set stream type as "Go Live" or camera stream
- */
-type?: "go-live" | "camera",
-
-/**
- * Override video width sent to Discord.
- * 
- * DO NOT SPECIFY UNLESS YOU KNOW WHAT YOU'RE DOING!
- */
-width?: number,
-
-/**
- * Override video height sent to Discord.
- * 
- * DO NOT SPECIFY UNLESS YOU KNOW WHAT YOU'RE DOING!
- */
-height?: number,
-
-/**
- * Override video frame rate sent to Discord.
- * 
- * DO NOT SPECIFY UNLESS YOU KNOW WHAT YOU'RE DOING!
- */
-frameRate?: number,
-
-/**
- * Same as ffmpeg's `readrate_initial_burst` command line flag
- * 
- * See https://ffmpeg.org/ffmpeg.html#:~:text=%2Dreadrate_initial_burst
- */
-readrateInitialBurst?: number,
-```
-
-## Performance tips
-
-See [this page](./PERFORMANCE.md) for some tips on improving performance
-
-## Running example
-
-`examples/basic/src/config.json`:
-
-```json
-"token": "SELF TOKEN HERE",
-"acceptedAuthors": ["USER_ID_HERE"],
-```
-
-1. Configure your `config.json` with your accepted authors ids, and your self token
-2. Generate js files with ```npm run build```
-3. Start program with: ```npm run start```
-4. Join a voice channel
-5. Start streaming with commands:
-
-for go-live
-
-```
-$play-live <Direct video link>
-```
-
-or for cam
-
-```
-$play-cam <Direct video link>
-```
-
-for example:
-
-```
-$play-live http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4
-```
-
-## FAQs
-
-- Can I stream on existing voice connection (CAM) and in a go-live connection simultaneously?
-
-Yes, just send the media packets over both connections. The voice gateway expects you to signal when a user turns on their camera, so make sure you signal using `client.signalVideo(guildId, channelId, true)` before you start sending cam media packets.
-
-- Does this library work with bot tokens?
-
-No, Discord blocks video from bots which is why this library uses a selfbot library as peer dependency. You must use a user token
+Медіатранспорт базується на
+[Discord-RE/Discord-video-stream](https://github.com/Discord-RE/Discord-video-stream).
+Оригінальна ліцензія — ISC.

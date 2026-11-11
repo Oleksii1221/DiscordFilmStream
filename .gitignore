@@ -1,6 +1,10 @@
 node_modules
 dist
 package-lock.json
+.env
+.env.*
+!.env.example
+.cache
 #example/src/config.json
 examples/*/node_modules
 examples/*/dist

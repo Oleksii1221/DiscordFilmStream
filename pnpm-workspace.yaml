@@ -1,0 +1,4 @@
+allowBuilds:
+  "@lng2004/node-datachannel": true
+  node-av: true
+  node-datachannel: true

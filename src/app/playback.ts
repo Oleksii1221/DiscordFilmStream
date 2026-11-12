@@ -21,7 +21,17 @@ export class PlaybackController {
   constructor(streamUserToken: string, videoUrl: string) {
     this.#streamUserToken = streamUserToken;
     this.#videoUrl = videoUrl;
-    this.#streamer = new Streamer(new StreamClient());
+    const streamClient = new StreamClient();
+
+    // The selfbot client omits Gateway intents because user sessions do not use
+    // them. When DFS reuses its official bot token, Discord requires the intents
+    // field in Identify. Guilds + GuildVoiceStates are sufficient here.
+    (
+      streamClient.options.ws as typeof streamClient.options.ws & {
+        intents: number;
+      }
+    ).intents = 129;
+    this.#streamer = new Streamer(streamClient);
   }
 
   get isPlaying(): boolean {

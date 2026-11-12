@@ -27,13 +27,15 @@ function requireSnowflake(name: string, fallback?: string): string {
 }
 
 export function loadConfig(): AppConfig {
+  const botToken = requireSecret("DISCORD_BOT_TOKEN");
   return {
     applicationId: requireSnowflake(
       "DISCORD_APPLICATION_ID",
       "1570088256945524776",
     ),
-    botToken: requireSecret("DISCORD_BOT_TOKEN"),
-    streamUserToken: requireSecret("DISCORD_STREAM_USER_TOKEN"),
+    botToken,
+    streamUserToken:
+      process.env.DISCORD_STREAM_USER_TOKEN?.trim() || botToken,
     videoUrl:
       process.env.DFS_VIDEO_URL?.trim() ||
       "https://www.youtube.com/watch?v=GBIIQ0kP15E",
